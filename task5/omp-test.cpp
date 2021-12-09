@@ -131,7 +131,7 @@ int main(){
 
 	gen_triangle(matrix);
 
-    //print_matrix(matrix);
+    print_matrix(matrix);
 
 	for (int i = 1; i <= 16; i *= 2){
 		double start_time = omp_get_wtime();
