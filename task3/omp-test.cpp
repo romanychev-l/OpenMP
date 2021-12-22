@@ -37,7 +37,7 @@ ld integral(ld a, ld b, ll N, ll num_threads = 1){
     ld h = (b-a)/N;
 	omp_set_num_threads(num_threads);
 
-    #pragma parallel for reduction(+:res)
+    #pragma omp parallel for reduction(+:res)
 	for(ll i = 0; i < N; i++)
 	      res += f(a + i*h)*h;
 
@@ -54,7 +54,7 @@ int main(){
     ll a = 15;
     ll b = 41;
 
-    for(ll j = 3; j<8; j++){
+    for(ll j = 3; j<=8; j++){
         ll n = pow(10, j);
 
         vector<ld> results;

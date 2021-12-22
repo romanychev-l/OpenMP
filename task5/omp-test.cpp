@@ -6,42 +6,46 @@
 
 using namespace std;
 
+typedef long long ll;
+typedef long double ld;
 
-typedef vector<vector<int> > vv;
-typedef vector<int> v;
+template <typename T>
+string to_string_with_precision(const T a_value, const ll n = 6){
+    ostringstream out;
+    out.precision(n);
+    out << fixed << a_value;
+    return out.str();
+}
 
-void print_matrix(vv& matrix){
-    int n = matrix.size();
-    int m = matrix[0].size() - 2;
-
-    for(int i = 0; i<n; i++){
-        for(int j = 0; j<m; j++){
-            cout << matrix[i][j] << ' ';
+void print_matrix(auto matrix, ll n){
+    for(ll i = 0; i<n; i++){
+        for(ll j = 0; j<n; j++){
+            cout << matrix[i][j] << '\t';
         }
         cout << "\n";
     }
 }
 
-void gen_matrix(vv& matrix, int mod){
-	int n = matrix.size();
-	for(int i = 0; i<n; i++){
-		int m = matrix[i].size() - 2;
+void gen_matrix(auto matrix, ll n, ll mod=1000){
+	for(ll i = 0; i<n; i++){
+        //cout << "gen matrix " << i << "\n";
+		ll m = n;
 
-		int start = matrix[i][m];
-		int end = matrix[i][m+1];
+		ll start = matrix[i][m];
+		ll end = matrix[i][m+1];
 
-		for(int j = start; j<end; j++){
+		for(ll j = start; j<end; j++){
 			matrix[i][j] = rand() % mod + 1;
 		}
 	}
 }
 
-void gen_triangle(vv& matrix, bool up=true, int mod=1000){
-	int n = matrix.size();
-	for(int i = 0; i<n; i++){
-		int m = matrix[i].size() - 2;
+void gen_triangle(auto matrix, ll n, bool up=true, ll mod=1000){
+	for(ll i = 0; i<n; i++){
+        //cout << "triangle " << i << "\n";
+		ll m = n;
 
-		int start, end;
+		ll start, end;
 		if(up){
 			start = i;
 			end = m;
@@ -54,20 +58,19 @@ void gen_triangle(vv& matrix, bool up=true, int mod=1000){
 		matrix[i][m+1] = end;
 	}
 
-	gen_matrix(matrix, mod);
+	gen_matrix(matrix, n, mod);
 }
 
-void gen_band(vv& matrix, int k1, int k2, bool up=true, int mod=1000){
-	int n = matrix.size();
-	for(int i = 0; i<n; i++){
-		int m = matrix[i].size() - 2;
+void gen_band(auto matrix, ll n, ll k1, ll k2, bool up=true, ll mod=1000){
+	for(ll i = 0; i<n; i++){
+		ll m = n + 1;
 
-		int start, end;
+		ll start, end;
 		if(1){
-			start = max(0, m - 1 - k1);
+			start = max(ll(0), m - 1 - k1);
 			end = min(m, i + k2 + 1);
 		} else {
-			start = max(0, i - k1);
+			start = max(ll(0), i - k1);
 			end = min(m, i + k2 + 1);
 		}
 
@@ -75,75 +78,133 @@ void gen_band(vv& matrix, int k1, int k2, bool up=true, int mod=1000){
 		matrix[i][m+1] = end;
 	}
 
-	gen_matrix(matrix, mod);
+	gen_matrix(matrix, n, mod);
 }
 
-int get_min(vv& matrix, int ind, int parallel=false){
-	if(parallel)
-		omp_set_nested(true);
+ll get_min(auto matrix, ll n, ll ind, string sheld="static", ll nested=false){
+	omp_set_nested(nested);
 
-	int m = matrix[ind].size()-2;
-	int start = matrix[ind][m];
-	int end = matrix[ind][m+1];
+	ll m = n;
+	ll start = matrix[ind][m];
+	ll end = matrix[ind][m+1];
 
-	int min = matrix[ind][0];
+	ll min = matrix[ind][0];
 
-	#pragma parallel for if(arallel)
-	for (int i = start; i < end; i++)
-	{
-		if (matrix[ind][i] < min)
-			min = matrix[ind][i];
-	}
+    if(sheld == "static"){
+        #pragma omp parallel for
+        for(ll i = start; i < end; i++){
+            if (matrix[ind][i] < min)
+                min = matrix[ind][i];
+        }
+    } else if(sheld == "dynamic"){
+        #pragma omp parallel for schedule(dynamic)
+        for(ll i = start; i < end; i++){
+            if (matrix[ind][i] < min)
+                min = matrix[ind][i];
+        }
+    } else if(sheld == "guided"){
+        #pragma omp parallel for schedule(guided)
+        for(ll i = start; i < end; i++){
+            if (matrix[ind][i] < min)
+                min = matrix[ind][i];
+        }
+
+    }
 
 	return min;
 }
 
 
-int get_max(vv& matrix, int parallel){
-	int n = matrix.size();
+ll get_max(auto matrix, ll n, ll num_threads=1, string sheld="static"){
+    ll mx;
+	ll* min_row = new ll[n];
+	omp_set_num_threads(num_threads);
 
-	int mx;
-	v min_of_lines(n);
-	omp_set_num_threads(parallel);
+    if(sheld == "static"){
+        #pragma omp parallel for
+        for(ll i = 0; i < n; i++)
+            min_row[i] = get_min(matrix, n, i, sheld, true);
 
-	#pragma omp parallel for
-	for (int i = 0; i < n; i++)
-		min_of_lines[i] = get_min(matrix, i);
+        mx = min_row[0];
 
-	mx = min_of_lines[0];
+        #pragma omp parallel for reduction(max:mx)
+        for(ll i = 1; i < n; i++)
+            if(min_row[i] > mx)
+                mx = min_row[i];
 
-	#pragma omp parallel for reduction(max:mx)
-	for (int i = 1; i < n; i++)
-		if (min_of_lines[i] > mx)
-			mx = min_of_lines[i];
+    } else if(sheld == "dynamic"){
+        #pragma omp parallel for schedule(dynamic)
+        for(ll i = 0; i < n; i++)
+            min_row[i] = get_min(matrix, n, i, sheld);
+
+        mx = min_row[0];
+
+        #pragma omp parallel for reduction(max:mx) schedule(dynamic)
+        for(ll i = 1; i < n; i++)
+            if(min_row[i] > mx)
+                mx = min_row[i];
+
+    } else if(sheld == "guided"){
+        #pragma omp parallel for schedule(guided)
+        for(ll i = 0; i < n; i++)
+            min_row[i] = get_min(matrix, n, i, sheld, true);
+
+        mx = min_row[0];
+
+        #pragma omp parallel for reduction(max:mx) schedule(guided)
+        for(ll i = 1; i < n; i++)
+            if(min_row[i] > mx)
+                mx = min_row[i];
+
+    }
 
 	return mx;
 }
 
-
+void delete_matrix(auto matrix, ll n){
+    for(ll i = 0; i<n; i++){
+        delete [] matrix[0];
+    }
+    delete [] matrix;
+}
 
 int main(){
-	int n, m;
-	cout << "Input n and m: ";
-	cin >> n >> m;
+    for(ll j = 1000; j<25000; j+=4000){
+        cout << "size " << j << "\n";
+        ll** matrix = new ll*[j];
+        for(ll i = 0; i<j; i++){
+            //cout << i << "\n";
+            matrix[i] = new ll[j+2];
+        }
 
-	vv matrix(n, v (m + 2));
+        gen_triangle(matrix, j);
+        //cout << "ok";
 
-	gen_triangle(matrix);
+        vector<ll> results;
 
-    print_matrix(matrix);
+        //print_matrix(matrix, j);
 
-	for (int i = 1; i <= 16; i *= 2){
-		double start_time = omp_get_wtime();
-		int result = get_max(matrix, i);
-		double time = omp_get_wtime() - start_time;
+        for (ll i = 1; i <= 16; i *= 2){
+            //cout << "num thread " << i << "\n";
+            ld start_time = omp_get_wtime();
 
-		cout << "Num threads: " << i << endl;
-		cout << "Time: " << time << endl;
-		cout << "Result: " << result << endl;
-	}
+            ll result = get_max(matrix, j, i, "guided");
+
+            ld time = omp_get_wtime() - start_time;
+
+            results.push_back(result);
+            string t = to_string_with_precision(time, 8);
+            t[1] = ',';
+            cout << t << '\n';
+        }
+        for(ll i = 0; i<results.size(); i++){
+            cout << results[i] << ' ';
+        }
+        cout << "\n";
+
+        //delete_matrix(matrix, j);
+    }
 
 
 	return 0;
 }
-
