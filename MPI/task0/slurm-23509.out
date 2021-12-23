@@ -1,0 +1,6 @@
+Process 0 on g1
+Process 3 on g1
+Process 1 on g1
+Process 2 on g1
+pi is approximately 3.1415926535981167, error is 0.0000000000083236
+wall clock time = 0.001419

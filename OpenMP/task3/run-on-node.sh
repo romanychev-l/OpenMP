@@ -1,0 +1,3 @@
+sbatch job.sh
+squeue
+
