@@ -1,1 +1,1 @@
-sbatch -n 4 job.sh
+sbatch -n 1 job.sh

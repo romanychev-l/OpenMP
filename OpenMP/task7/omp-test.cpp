@@ -48,10 +48,10 @@ ll scalar(ll n, ll m, ll num_threads=1){
                 for(ll j = 0; j<m; j++){
                     cin >> array[i][j];
                 }
-                #pragma omp critical
-                {
+                //#pragma omp critical
+                //{
                     end++;
-                }
+                //}
             }
             #pragma omp critical
             {
@@ -63,13 +63,13 @@ ll scalar(ll n, ll m, ll num_threads=1){
             while(!f || start != end){
                 ll ind = -1;
                 ll res = 0;
-                #pragma omp critical
-                {
+                //#pragma omp critical
+                //{
                     if(end - start >= 2){
                         ind = start;
                         start += 2;
                     }
-                }
+                //}
                 if(ind != -1){
                     res = 0;
                     #pragma omp parallel for reduction(+:res)

@@ -9,7 +9,7 @@ using namespace std;
 int main(int argc, char* argv[]){
     int ProcNum, ProcRank;
     double eTime, sTime, Time;
-    ll i, N=10000, mn;
+    ll i, N=100000000, mn;
     ll* array = new ll[N];
 
     MPI_Init(&argc, &argv);

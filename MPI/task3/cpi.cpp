@@ -1,0 +1,63 @@
+#include <mpi.h>
+#include <time.h>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <iomanip>
+
+typedef long long ll;
+typedef long double ld;
+
+using namespace std;
+
+template <typename T>
+string to_string_with_precision(const T a_value, const ll n = 6)
+{
+    ostringstream out;
+    out.precision(n);
+    out << fixed << a_value;
+    return out.str();
+}
+
+int main(int argc, char* argv[]){
+
+        int ProcNum, ProcRank;
+        ld x, y, eTime, sTime;
+        ll lhit, hit=0, i, lN, N = 1e7;
+
+        MPI_Init(&argc, &argv);
+        MPI_Comm_rank(MPI_COMM_WORLD, &ProcNum);
+        MPI_Comm_size(MPI_COMM_WORLD, &ProcRank);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        sTime = MPI_Wtime();
+        lhit = 0;
+        srand((unsigned)(time(0)));
+        lN = N/ProcRank;
+
+        for(i = 1; i<=lN; i++){
+                x = rand()/ld(RAND_MAX);
+                y = rand()/ld(RAND_MAX);
+                if(x*x + y*y <= 1) lhit++;
+        }
+        MPI_Reduce(&lhit, &hit, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        ld est = ld(hit*4)/ld(N);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        eTime = MPI_Wtime();
+        string pTime = to_string_with_precision(eTime - sTime);
+
+        pTime[1] = ',';
+
+        if (ProcNum == 0){
+                cout << "Данные: " << N << "\n";
+                cout << "Оценка Pi: " << est << "\n";
+                cout << "Длительность: " << pTime << "\n";
+        }
+        MPI_Finalize();
+
+    return 0;
+}

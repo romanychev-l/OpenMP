@@ -1,3 +1,0 @@
-sbatch job.sh
-squeue
-

@@ -52,7 +52,7 @@ ll get_max(ll** array, ll n, ll num_threads=1){
 
     #pragma omp parallel for
     for (ll i = 0; i < n; i++)
-        min_row[i] = get_min(array[i], n);
+        min_row[i] = get_min(array[i], n, true);
 
     mx = min_row[0];
     #pragma omp parallel for reduction(max:mx)
